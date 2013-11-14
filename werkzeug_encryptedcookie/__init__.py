@@ -1,4 +1,6 @@
 import json
+import zlib
+import struct
 from time import time
 
 from Crypto import Random
@@ -81,3 +83,20 @@ class EncryptedCookie(SecureCookie):
                 del data['_expires']
 
         return cls(data, secret_key, False)
+
+
+class SecureEncryptedCookie(EncryptedCookie):
+    @classmethod
+    def encrypt(cls, data, secret_key):
+        crc = zlib.crc32(data, zlib.crc32(secret_key))
+        data += struct.pack('>I', crc & 0xffffffff)
+        return super(SecureEncryptedCookie, cls).encrypt(data, secret_key)
+
+    @classmethod
+    def decrypt(cls, string, secret_key):
+        data = super(SecureEncryptedCookie, cls).decrypt(string, secret_key)
+        data, crc1 = data[:-4], data[-4:]
+        crc2 = zlib.crc32(data, zlib.crc32(secret_key))
+        if crc1 != struct.pack('>I', crc2 & 0xffffffff):
+            return b''
+        return data
