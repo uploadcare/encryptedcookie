@@ -86,8 +86,16 @@ class SecureEncryptedCookieTest(EncruptedCookieTest):
     RawCookie = type('RawCookie', (Cookie,), {'quote_base64': False})
 
     def test_unsigned(self):
-        key = 'my little key'
-        r = EncryptedCookie.encrypt(b'{"a": "próba"}' + b'1234', key)
+        key, case = 'my little key', b'{"a": "próba"}'
+        r = self.Cookie.encrypt(case, key)
+        signed = EncryptedCookie.decrypt(r, key)
+        self.assertIn(case, signed)
+
+        r = EncryptedCookie.encrypt(signed, key)
+        r = self.Cookie.decrypt(r, key)
+        self.assertEqual(r, case)
+
+        r = EncryptedCookie.encrypt(signed[:-1] + b'!', key)
         r = self.Cookie.decrypt(r, key)
         self.assertEqual(r, b'')
 
