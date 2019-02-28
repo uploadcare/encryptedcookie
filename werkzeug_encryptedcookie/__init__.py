@@ -7,6 +7,7 @@ from Crypto import Random
 from Crypto.Hash import SHA
 from Crypto.Cipher import ARC4
 
+import six
 from werkzeug._internal import _date_to_unix
 from werkzeug.contrib.securecookie import SecureCookie
 
@@ -59,7 +60,7 @@ class EncryptedCookie(SecureCookie):
 
     @classmethod
     def unserialize(cls, string, secret_key):
-        if isinstance(string, unicode):
+        if isinstance(string, six.text_type):
             string = string.encode('utf-8', 'replace')
 
         if cls.quote_base64:

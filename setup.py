@@ -17,7 +17,7 @@ setup(
     description='Werkzeug encrypted cookie',
     packages=['werkzeug_encryptedcookie'],
     platforms='any',
-    install_requires=['PyCrypto>=2.5', 'werkzeug'],
+    install_requires=['PyCrypto>=2.5', 'werkzeug', 'six'],
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.6',
