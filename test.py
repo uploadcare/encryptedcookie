@@ -22,7 +22,7 @@ class EncruptedCookieTest(unittest.TestCase):
 
     def test_encrypt_decrypt(self):
         key = 'my little key'
-        for case in [b'{"a": "b"}', b'{"a": "próba"}']:
+        for case in [b'{"a": "b"}', b'{"a": "pr\xc3\xb3ba"}']:
             r1 = self.Cookie.encrypt(case, key)
             r2 = self.Cookie.encrypt(case, key)
             self.assertIsInstance(r1, bytes, case)
@@ -70,7 +70,7 @@ class EncruptedCookieTest(unittest.TestCase):
 
     def test_fail_when_not_json(self):
         key = 'my little key'
-        r = self.RawCookie.encrypt(b'{"a", "próba"}', key)
+        r = self.RawCookie.encrypt(b'{"a", "pr\xc3\xb3ba"}', key)
         r = self.RawCookie.unserialize(r, key)
         self.assertFalse(dict(r))
 
@@ -86,7 +86,7 @@ class SecureEncryptedCookieTest(EncruptedCookieTest):
     RawCookie = type('RawCookie', (Cookie,), {'quote_base64': False})
 
     def test_unsigned(self):
-        key, case = 'my little key', b'{"a": "próba"}'
+        key, case = 'my little key', b'{"a": "pr\xc3\xb3ba"}'
         r = self.Cookie.encrypt(case, key)
         signed = EncryptedCookie.decrypt(r, key)
         self.assertIn(case, signed)
