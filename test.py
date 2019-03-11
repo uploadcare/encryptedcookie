@@ -44,7 +44,8 @@ class EncruptedCookieTest(unittest.TestCase):
         for case in [{'a': 'b'}, {'a': u'próba'}, {u'próba': '123'}]:
             r = self.Cookie(case, key).serialize()
             self.assertIsInstance(r, bytes, case)
-            self.assertEqual(r, r.decode('ascii'), case)
+            # Check it is ascii
+            r.decode('ascii')
 
             r = self.Cookie.unserialize(r, key)
             self.assertEqual(r, case)
