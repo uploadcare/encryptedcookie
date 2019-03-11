@@ -1,6 +1,9 @@
+from __future__ import unicode_literals
+
 import json
 import zlib
 import struct
+import base64
 from time import time
 
 from Crypto import Random
@@ -43,7 +46,7 @@ class EncryptedCookie(SecureCookie):
 
         if self.quote_base64:
             # bytes -> ascii bytes
-            string = ''.join(string.encode('base64').splitlines()).strip()
+            string = base64.b64encode(string)
 
         return string
 
@@ -68,7 +71,7 @@ class EncryptedCookie(SecureCookie):
         if cls.quote_base64:
             try:
                 # ascii bytes -> bytes
-                string = string.decode('base64')
+                string = base64.b64decode(string)
             except Exception:
                 pass
 
