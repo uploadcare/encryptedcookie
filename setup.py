@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='werkzeug-encryptedcookie',
-    version='1.1',
+    version='2.0',
     url='https://github.com/homm/werkzeug-encryptedcookie',
     author='Alexander Karpinsky',
     author_email='homm86@gmail.com',
