@@ -1,17 +1,12 @@
-# encoding: utf-8
-from __future__ import unicode_literals
-
-import json
-import zlib
-import struct
 import base64
+import json
+import struct
+import zlib
 from time import time
 
 from Crypto import Random
-from Crypto.Hash import SHA
 from Crypto.Cipher import ARC4
-
-import six
+from Crypto.Hash import SHA
 from werkzeug._internal import _date_to_unix
 from werkzeug.contrib.securecookie import SecureCookie
 
@@ -47,14 +42,12 @@ class EncryptedCookie(SecureCookie):
 
         if self.quote_base64:
             # bytes -> ascii bytes
-            string = base64.b64encode(string)
+            string = b''.join(base64.b64encode(string).splitlines()).strip()
 
         return string
 
-    @classmethod
-    def loads(cls, data):
-        # bytes -> dict
-        return json.loads(data.decode('utf-8'))
+    # bytes -> dict
+    loads = staticmethod(json.loads)
 
     @classmethod
     def decrypt(cls, string, secret_key):
@@ -66,9 +59,6 @@ class EncryptedCookie(SecureCookie):
 
     @classmethod
     def unserialize(cls, string, secret_key):
-        if isinstance(string, six.text_type):
-            string = string.encode('utf-8', 'replace')
-
         if cls.quote_base64:
             try:
                 # ascii bytes -> bytes
