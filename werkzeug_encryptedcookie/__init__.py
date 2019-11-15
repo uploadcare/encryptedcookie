@@ -1,12 +1,12 @@
+import base64
 import json
-import zlib
 import struct
+import zlib
 from time import time
 
 from Crypto import Random
-from Crypto.Hash import SHA
 from Crypto.Cipher import ARC4
-
+from Crypto.Hash import SHA
 from werkzeug._internal import _date_to_unix
 from werkzeug.contrib.securecookie import SecureCookie
 
@@ -42,7 +42,7 @@ class EncryptedCookie(SecureCookie):
 
         if self.quote_base64:
             # bytes -> ascii bytes
-            string = ''.join(string.encode('base64').splitlines()).strip()
+            string = b''.join(base64.b64encode(string).splitlines()).strip()
 
         return string
 
@@ -59,13 +59,10 @@ class EncryptedCookie(SecureCookie):
 
     @classmethod
     def unserialize(cls, string, secret_key):
-        if isinstance(string, unicode):
-            string = string.encode('utf-8', 'replace')
-
         if cls.quote_base64:
             try:
                 # ascii bytes -> bytes
-                string = string.decode('base64')
+                string = base64.b64decode(string)
             except Exception:
                 pass
 
