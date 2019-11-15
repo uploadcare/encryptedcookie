@@ -6,14 +6,14 @@ tests_require = ['pytest']
 
 setup(
     name='werkzeug-encryptedcookie',
-    version='3.0',
+    version='3.1',
     url='https://github.com/homm/werkzeug-encryptedcookie',
     author='Alexander Karpinsky',
     author_email='homm86@gmail.com',
     description='Werkzeug encrypted cookie',
     packages=['werkzeug_encryptedcookie'],
     platforms='any',
-    install_requires=['PyCrypto>=2.5', 'werkzeug'],
+    install_requires=['PyCrypto>=2.5', 'werkzeug', 'brotli'],
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',

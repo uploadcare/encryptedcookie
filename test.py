@@ -8,6 +8,8 @@ from werkzeug_encryptedcookie import EncryptedCookie, SecureEncryptedCookie
 class EncryptedCookieTest(unittest.TestCase):
     Cookie = EncryptedCookie
     RawCookie = type('RawCookie', (Cookie,), {'quote_base64': False})
+    NoCompressCookie = type('NoCompressCookie', (Cookie,),
+                            {'compress_cookie': False})
 
     def test_dumps_loads(self):
         for case in [{'a': 'b'}, {'a': 'próba'}, {'próba': '123'}]:
@@ -76,10 +78,20 @@ class EncryptedCookieTest(unittest.TestCase):
         r = self.RawCookie.unserialize(r[:20] + r[21:], key)
         self.assertFalse(dict(r))
 
+    def test_not_fail_when_unable_to_decompress(self):
+        key = b'my not so little key'
+        case = {'a': 'próba'}
+        no_compress = self.NoCompressCookie(case, key)
+        compress = self.Cookie(case, key)
+        result = compress.unserialize(no_compress.serialize(), key)
+        self.assertTrue(result['a'] == case['a'])
+
 
 class SecureEncryptedCookieTest(EncryptedCookieTest):
     Cookie = SecureEncryptedCookie
     RawCookie = type('RawCookie', (Cookie,), {'quote_base64': False})
+    NoCompressCookie = type('NoCompressCookie', (Cookie,),
+                            {'compress_cookie': False})
 
     def test_unsigned(self):
         key, case = b'my little key', '{"a": "próba"}'.encode('utf-8')

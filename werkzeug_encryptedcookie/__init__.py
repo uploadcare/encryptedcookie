@@ -4,6 +4,7 @@ import struct
 import zlib
 from time import time
 
+import brotli
 from Crypto import Random
 from Crypto.Cipher import ARC4
 from Crypto.Hash import SHA
@@ -12,6 +13,8 @@ from werkzeug.contrib.securecookie import SecureCookie
 
 
 class EncryptedCookie(SecureCookie):
+    compress_cookie = True
+
     @classmethod
     def _get_cipher(cls, key):
         return ARC4.new(SHA.new(key).digest())
@@ -20,6 +23,14 @@ class EncryptedCookie(SecureCookie):
     def dumps(cls, data):
         # dict -> bytes
         return json.dumps(data, ensure_ascii=False).encode('utf-8')
+
+    @classmethod
+    def compress(cls, data):
+        return brotli.compress(data, quality=8)
+
+    @classmethod
+    def decompress(cls, data):
+        return brotli.decompress(data)
 
     @classmethod
     def encrypt(cls, data, secret_key):
@@ -39,6 +50,9 @@ class EncryptedCookie(SecureCookie):
         payload = self.dumps(data)
 
         string = self.encrypt(payload, self.secret_key)
+
+        if self.compress_cookie:
+            string = self.compress(string)
 
         if self.quote_base64:
             # bytes -> ascii bytes
@@ -64,6 +78,12 @@ class EncryptedCookie(SecureCookie):
                 # ascii bytes -> bytes
                 string = base64.b64decode(string)
             except Exception:
+                pass
+
+        if cls.compress_cookie:
+            try:
+                string = cls.decompress(string)
+            except brotli.error:
                 pass
 
         payload = cls.decrypt(string, secret_key)
