@@ -12,6 +12,8 @@ from werkzeug.contrib.securecookie import SecureCookie
 
 
 class EncryptedCookie(SecureCookie):
+    serialization_method = json
+
     @classmethod
     def _get_cipher(cls, key):
         return ARC4.new(SHA.new(key).digest())
