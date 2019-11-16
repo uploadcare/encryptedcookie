@@ -42,7 +42,7 @@ class EncryptedCookie(SecureCookie):
 
         if self.quote_base64:
             # bytes -> ascii bytes
-            string = b''.join(base64.b64encode(string).splitlines()).strip()
+            string = base64.b64encode(string)
 
         return string
 
