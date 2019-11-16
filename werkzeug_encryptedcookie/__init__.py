@@ -25,19 +25,15 @@ class EncryptedCookie(SecureCookie):
         return json.dumps(data, ensure_ascii=False).encode('utf-8')
 
     @classmethod
-    def compress(cls, data):
-        return brotli.compress(data, quality=8)
-
-    @classmethod
-    def decompress(cls, data):
-        return brotli.decompress(data)
-
-    @classmethod
     def encrypt(cls, data, secret_key):
         # bytes + key -> bytes
         nonce = Random.new().read(16)
         cipher = cls._get_cipher(secret_key + nonce)
         return nonce + cipher.encrypt(data)
+
+    @classmethod
+    def compress(cls, data):
+        return brotli.compress(data, quality=8)
 
     def serialize(self, expires=None):
         if self.secret_key is None:
@@ -70,6 +66,10 @@ class EncryptedCookie(SecureCookie):
 
         cipher = cls._get_cipher(secret_key + nonce)
         return cipher.decrypt(payload)
+
+    @classmethod
+    def decompress(cls, data):
+        return brotli.decompress(data)
 
     @classmethod
     def unserialize(cls, string, secret_key):
