@@ -12,6 +12,7 @@ from werkzeug.contrib.securecookie import SecureCookie
 
 
 class EncryptedCookie(SecureCookie):
+    # to avoid deprecation warnings
     serialization_method = json
 
     @classmethod
