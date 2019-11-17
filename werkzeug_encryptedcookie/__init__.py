@@ -49,8 +49,10 @@ class EncryptedCookie(SecureCookie):
 
         return string
 
-    # str -> dict
-    loads = staticmethod(json.loads)
+    @classmethod
+    def loads(cls, data):
+        # str -> dict
+        return json.loads(data.decode('utf-8'))
 
     @classmethod
     def decrypt(cls, string, secret_key):
@@ -72,7 +74,7 @@ class EncryptedCookie(SecureCookie):
         payload = cls.decrypt(string, secret_key)
 
         try:
-            data = cls.loads(payload.decode('utf-8'))
+            data = cls.loads(payload)
         except ValueError:
             data = None
 
