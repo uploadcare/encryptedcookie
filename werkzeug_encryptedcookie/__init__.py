@@ -14,6 +14,7 @@ from werkzeug.contrib.securecookie import SecureCookie
 
 class EncryptedCookie(SecureCookie):
     compress_cookie = True
+    compress_cookie_header = b'~!~brtl~!~'
     # to avoid deprecation warnings
     serialization_method = json
 
@@ -35,7 +36,7 @@ class EncryptedCookie(SecureCookie):
 
     @classmethod
     def compress(cls, data):
-        return brotli.compress(data, quality=8)
+        return cls.compress_cookie_header + brotli.compress(data, quality=8)
 
     def serialize(self, expires=None):
         if self.secret_key is None:
@@ -73,7 +74,10 @@ class EncryptedCookie(SecureCookie):
 
     @classmethod
     def decompress(cls, data):
-        return brotli.decompress(data)
+        _, sep, body = data.partition(cls.compress_cookie_header)
+        if not sep:
+            return data
+        return brotli.decompress(body)
 
     @classmethod
     def unserialize(cls, string, secret_key):
