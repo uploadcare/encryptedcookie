@@ -74,14 +74,12 @@ class EncryptedCookie(SecureCookie):
 
     @classmethod
     def decompress(cls, data):
-        if not data.startswith(cls.compress_cookie_header):
-            return data
-
-        try:
+        if data.startswith(cls.compress_cookie_header):
             body = data[len(cls.compress_cookie_header):]
-            return brotli.decompress(body)
-        except brotli.error:
-            pass
+            try:
+                return brotli.decompress(body)
+            except brotli.error:
+                pass
 
         return data
 
