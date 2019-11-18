@@ -51,7 +51,7 @@ class EncryptedCookie(SecureCookie):
 
     @classmethod
     def loads(cls, data):
-        # str -> dict
+        # bytes -> dict
         return json.loads(data.decode('utf-8'))
 
     @classmethod
