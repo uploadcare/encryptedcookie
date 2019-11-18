@@ -77,7 +77,13 @@ class EncryptedCookie(SecureCookie):
         _, sep, body = data.partition(cls.compress_cookie_header)
         if not sep:
             return data
-        return brotli.decompress(body)
+
+        decompressed = brotli.decompress(body)
+        # cookie itself is empty dict `{}` at least
+        if decompressed not in (None, ''):
+            return decompressed
+
+        return data
 
     @classmethod
     def unserialize(cls, string, secret_key):
