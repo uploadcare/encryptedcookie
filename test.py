@@ -10,8 +10,12 @@ class EncryptedCookieTest(unittest.TestCase):
     class RawCookie(Cookie):
         quote_base64 = False
 
-    class RawCookie(Cookie):
+    class NoCompressCookie(Cookie):
         compress_cookie = False
+
+    # Explicit setup for tests
+    class CompressCookie(Cookie):
+        compress_cookie = True
 
     def test_dumps_loads(self):
         for case in [{'a': 'b'}, {'a': 'próba'}, {'próba': '123'}]:
@@ -82,13 +86,24 @@ class EncryptedCookieTest(unittest.TestCase):
         r = self.RawCookie.unserialize(r[:20] + r[21:], key)
         self.assertFalse(dict(r))
 
-    def test_not_fail_when_unable_to_decompress(self):
-        key = b'my not so little key'
+    def test_decompress_not_compressed(self):
+        key = b'my little key'
         case = {'a': 'próba'}
         no_compress = self.NoCompressCookie(case, key)
-        compress = self.Cookie(case, key)
-        result = compress.unserialize(no_compress.serialize(), key)
-        self.assertTrue(result['a'] == case['a'])
+        compress = self.CompressCookie(case, key)
+        cases = (
+            # No-compressed instance unserialized by no-compressed instance
+            (no_compress, no_compress),
+            # No-compress instance unserialized by compress instance
+            (no_compress, compress),
+            # Compressed instance unserialized by no-compress instance
+            (compress, no_compress),
+            # Compressed instance unserialized by compress instance
+            (compress, compress),
+        )
+        for c1, c2 in cases:
+            result = c2.unserialize(c1.serialize(), key)
+            self.assertTrue(result['a'] == case['a'])
 
 
 class SecureEncryptedCookieTest(EncryptedCookieTest):
@@ -96,8 +111,12 @@ class SecureEncryptedCookieTest(EncryptedCookieTest):
     class RawCookie(Cookie):
         quote_base64 = False
 
-    class RawCookie(Cookie):
+    class NoCompressCookie(Cookie):
         compress_cookie = False
+
+    # Explicit setup for tests
+    class CompressCookie(Cookie):
+        compress_cookie = True
 
     def test_unsigned(self):
         key, case = b'my little key', b'{"a": "pr\xc3\xb3ba"}'
