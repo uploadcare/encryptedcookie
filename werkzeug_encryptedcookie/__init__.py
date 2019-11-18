@@ -47,10 +47,10 @@ class EncryptedCookie(SecureCookie):
 
         payload = self.dumps(data)
 
-        string = self.encrypt(payload, self.secret_key)
-
         if self.compress_cookie:
-            string = self.compress(string)
+            payload = self.compress(payload)
+
+        string = self.encrypt(payload, self.secret_key)
 
         if self.quote_base64:
             # bytes -> ascii bytes
@@ -84,13 +84,13 @@ class EncryptedCookie(SecureCookie):
             except Exception:
                 pass
 
+        payload = cls.decrypt(string, secret_key)
+
         if cls.compress_cookie:
             try:
-                string = cls.decompress(string)
+                payload = cls.decompress(payload)
             except brotli.error:
                 pass
-
-        payload = cls.decrypt(string, secret_key)
 
         try:
             data = cls.loads(payload)
