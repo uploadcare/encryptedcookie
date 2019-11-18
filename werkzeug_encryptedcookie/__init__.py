@@ -95,12 +95,7 @@ class EncryptedCookie(SecureCookie):
                 pass
 
         payload = cls.decrypt(string, secret_key)
-
-        if cls.compress_cookie:
-            try:
-                payload = cls.decompress(payload)
-            except brotli.error:
-                pass
+        payload = cls.decompress(payload)
 
         try:
             data = cls.loads(payload)
