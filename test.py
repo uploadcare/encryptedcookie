@@ -86,7 +86,7 @@ class EncryptedCookieTest(unittest.TestCase):
         r = self.RawCookie.unserialize(r[:20] + r[21:], key)
         self.assertFalse(dict(r))
 
-    def test_decompress_not_compressed(self):
+    def test_compression_and_decompression(self):
         key = b'my little key'
         case = {'a': 'próba'}
         no_compress = self.NoCompressCookie(case, key)
