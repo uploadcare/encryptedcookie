@@ -14,6 +14,8 @@ from werkzeug.contrib.securecookie import SecureCookie
 
 class EncryptedCookie(SecureCookie):
     compress_cookie = True
+    # to avoid deprecation warnings
+    serialization_method = json
 
     @classmethod
     def _get_cipher(cls, key):
@@ -52,12 +54,14 @@ class EncryptedCookie(SecureCookie):
 
         if self.quote_base64:
             # bytes -> ascii bytes
-            string = b''.join(base64.b64encode(string).splitlines()).strip()
+            string = base64.b64encode(string)
 
         return string
 
-    # bytes -> dict
-    loads = staticmethod(json.loads)
+    @classmethod
+    def loads(cls, data):
+        # bytes -> dict
+        return json.loads(data.decode('utf-8'))
 
     @classmethod
     def decrypt(cls, string, secret_key):

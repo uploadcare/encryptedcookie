@@ -7,9 +7,11 @@ from werkzeug_encryptedcookie import EncryptedCookie, SecureEncryptedCookie
 
 class EncryptedCookieTest(unittest.TestCase):
     Cookie = EncryptedCookie
-    RawCookie = type('RawCookie', (Cookie,), {'quote_base64': False})
-    NoCompressCookie = type('NoCompressCookie', (Cookie,),
-                            {'compress_cookie': False})
+    class RawCookie(Cookie):
+        quote_base64 = False
+
+    class RawCookie(Cookie):
+        compress_cookie = False
 
     def test_dumps_loads(self):
         for case in [{'a': 'b'}, {'a': 'próba'}, {'próba': '123'}]:
@@ -21,7 +23,7 @@ class EncryptedCookieTest(unittest.TestCase):
 
     def test_encrypt_decrypt(self):
         key = b'my little key'
-        for case in [b'{"a": "b"}', '{"a": "próba"}'.encode('utf-8')]:
+        for case in [b'{"a": "b"}', b'{"a": "pr\xc3\xb3ba"}']:
             r1 = self.Cookie.encrypt(case, key)
             r2 = self.Cookie.encrypt(case, key)
             self.assertIsInstance(r1, bytes, case)
@@ -41,6 +43,8 @@ class EncryptedCookieTest(unittest.TestCase):
         for case in [{'a': 'b'}, {'a': 'próba'}, {'próba': '123'}]:
             r = self.Cookie(case, key).serialize()
             self.assertIsInstance(r, bytes, case)
+            # Check it is ascii
+            r.decode('ascii')
 
             r = self.Cookie.unserialize(r, key)
             self.assertEqual(r, case)
@@ -68,7 +72,7 @@ class EncryptedCookieTest(unittest.TestCase):
 
     def test_fail_when_not_json(self):
         key = b'my little key'
-        r = self.RawCookie.encrypt('{"a", "próba"}'.encode('utf-8'), key)
+        r = self.RawCookie.encrypt(b'{"a", "pr\xc3\xb3ba"}', key)
         r = self.RawCookie.unserialize(r, key)
         self.assertFalse(dict(r))
 
@@ -89,12 +93,14 @@ class EncryptedCookieTest(unittest.TestCase):
 
 class SecureEncryptedCookieTest(EncryptedCookieTest):
     Cookie = SecureEncryptedCookie
-    RawCookie = type('RawCookie', (Cookie,), {'quote_base64': False})
-    NoCompressCookie = type('NoCompressCookie', (Cookie,),
-                            {'compress_cookie': False})
+    class RawCookie(Cookie):
+        quote_base64 = False
+
+    class RawCookie(Cookie):
+        compress_cookie = False
 
     def test_unsigned(self):
-        key, case = b'my little key', '{"a": "próba"}'.encode('utf-8')
+        key, case = b'my little key', b'{"a": "pr\xc3\xb3ba"}'
         r = self.Cookie.encrypt(case, key)
         signed = EncryptedCookie.decrypt(r, key)
         self.assertIn(case, signed)
