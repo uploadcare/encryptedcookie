@@ -77,11 +77,11 @@ class EncryptedCookie(SecureCookie):
         if not data.startswith(cls.compress_cookie_header):
             return data
 
-        body = data[len(cls.compress_cookie_header):]
-        decompressed = brotli.decompress(body)
-        # cookie itself is empty dict `{}` at least
-        if decompressed not in (None, ''):
-            return decompressed
+        try:
+            body = data[len(cls.compress_cookie_header):]
+            return brotli.decompress(body)
+        except brotli.error:
+            pass
 
         return data
 
