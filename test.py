@@ -101,9 +101,9 @@ class EncryptedCookieTest(unittest.TestCase):
             # Compressed instance unserialized by compress instance
             (compress, compress),
         )
-        for c1, c2 in cases:
-            result = c2.unserialize(c1.serialize(), key)
-            self.assertTrue(result['a'] == case['a'])
+        for cookie1, cookie2 in cases:
+            result = cookie2.unserialize(cookie1.serialize(), key)
+            self.assertDictEqual(dict(result), case)
 
 
 class SecureEncryptedCookieTest(EncryptedCookieTest):
