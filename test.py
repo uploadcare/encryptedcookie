@@ -1,19 +1,17 @@
 # encoding: utf-8
-from __future__ import unicode_literals
-
 import unittest
 from time import time
 
 from werkzeug_encryptedcookie import EncryptedCookie, SecureEncryptedCookie
 
 
-class EncruptedCookieTest(unittest.TestCase):
+class EncryptedCookieTest(unittest.TestCase):
     Cookie = EncryptedCookie
     class RawCookie(Cookie):
         quote_base64 = False
 
     def test_dumps_loads(self):
-        for case in [{'a': 'b'}, {'a': u'próba'}, {u'próba': '123'}]:
+        for case in [{'a': 'b'}, {'a': 'próba'}, {'próba': '123'}]:
             r = self.Cookie.dumps(case)
             self.assertIsInstance(r, bytes, case)
 
@@ -39,7 +37,7 @@ class EncruptedCookieTest(unittest.TestCase):
 
     def test_serialize_unserialize(self):
         key = b'my little key'
-        for case in [{'a': 'b'}, {'a': u'próba'}, {u'próba': '123'}]:
+        for case in [{'a': 'b'}, {'a': 'próba'}, {'próba': '123'}]:
             r = self.Cookie(case, key).serialize()
             self.assertIsInstance(r, bytes, case)
             # Check it is ascii
@@ -51,7 +49,7 @@ class EncruptedCookieTest(unittest.TestCase):
 
     def test_expires(self):
         key = b'my little key'
-        c = self.Cookie({'a': u'próba'}, key)
+        c = self.Cookie({'a': 'próba'}, key)
 
         r = self.Cookie.unserialize(c.serialize(time() - 1), key)
         self.assertFalse(dict(r))
@@ -65,7 +63,7 @@ class EncruptedCookieTest(unittest.TestCase):
         self.assertTrue(dict(r))
 
     def test_fail_with_another_key(self):
-        c = self.Cookie({'a': u'próba'}, 'one key')
+        c = self.Cookie({'a': 'próba'}, 'one key')
         r = self.Cookie.unserialize(c.serialize(), b'another key')
         self.assertFalse(dict(r))
 
@@ -77,12 +75,12 @@ class EncruptedCookieTest(unittest.TestCase):
 
     def test_fail_when_corrupted(self):
         key = b'my little key'
-        r = self.RawCookie({"a": u"próba"}, key).serialize()
+        r = self.RawCookie({"a": "próba"}, key).serialize()
         r = self.RawCookie.unserialize(r[:20] + r[21:], key)
         self.assertFalse(dict(r))
 
 
-class SecureEncryptedCookieTest(EncruptedCookieTest):
+class SecureEncryptedCookieTest(EncryptedCookieTest):
     Cookie = SecureEncryptedCookie
     class RawCookie(Cookie):
         quote_base64 = False
