@@ -4,6 +4,7 @@ import struct
 import zlib
 from time import time
 
+import brotli
 from Crypto import Random
 from Crypto.Cipher import ARC4
 from Crypto.Hash import SHA
@@ -12,6 +13,8 @@ from werkzeug.contrib.securecookie import SecureCookie
 
 
 class EncryptedCookie(SecureCookie):
+    compress_cookie = True
+    compress_cookie_header = b'~!~brtl~!~'
     # to avoid deprecation warnings
     serialization_method = json
 
@@ -31,6 +34,10 @@ class EncryptedCookie(SecureCookie):
         cipher = cls._get_cipher(secret_key + nonce)
         return nonce + cipher.encrypt(data)
 
+    @classmethod
+    def compress(cls, data):
+        return cls.compress_cookie_header + brotli.compress(data, quality=8)
+
     def serialize(self, expires=None):
         if self.secret_key is None:
             raise RuntimeError('no secret key defined')
@@ -40,6 +47,9 @@ class EncryptedCookie(SecureCookie):
             data['_expires'] = _date_to_unix(expires)
 
         payload = self.dumps(data)
+
+        if self.compress_cookie:
+            payload = self.compress(payload)
 
         string = self.encrypt(payload, self.secret_key)
 
@@ -63,6 +73,17 @@ class EncryptedCookie(SecureCookie):
         return cipher.decrypt(payload)
 
     @classmethod
+    def decompress(cls, data):
+        if data.startswith(cls.compress_cookie_header):
+            body = data[len(cls.compress_cookie_header):]
+            try:
+                return brotli.decompress(body)
+            except brotli.error:
+                pass
+
+        return data
+
+    @classmethod
     def unserialize(cls, string, secret_key):
         if cls.quote_base64:
             try:
@@ -72,6 +93,7 @@ class EncryptedCookie(SecureCookie):
                 pass
 
         payload = cls.decrypt(string, secret_key)
+        payload = cls.decompress(payload)
 
         try:
             data = cls.loads(payload)
