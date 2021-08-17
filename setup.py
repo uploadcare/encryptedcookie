@@ -13,7 +13,7 @@ setup(
     description='Werkzeug encrypted cookie',
     packages=['werkzeug_encryptedcookie'],
     platforms='any',
-    install_requires=['PyCrypto>=2.5', 'werkzeug', 'brotli'],
+    install_requires=['pycryptodome', 'werkzeug', 'brotli'],
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
