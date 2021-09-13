@@ -8,8 +8,7 @@ import brotli
 from Crypto import Random
 from Crypto.Cipher import ARC4
 from Crypto.Hash import SHA
-from werkzeug._internal import _date_to_unix
-from werkzeug.contrib.securecookie import SecureCookie
+from secure_cookie.cookie import _date_to_unix, SecureCookie
 
 
 class EncryptedCookie(SecureCookie):
