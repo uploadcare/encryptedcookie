@@ -1,11 +1,9 @@
-# encoding: utf-8
-import unittest
 from time import time
 
 from werkzeug_encryptedcookie import EncryptedCookie, SecureEncryptedCookie
 
 
-class EncryptedCookieTest(unittest.TestCase):
+class TestEncryptedCookie:
     Cookie = EncryptedCookie
     class RawCookie(Cookie):
         quote_base64 = False
@@ -20,39 +18,38 @@ class EncryptedCookieTest(unittest.TestCase):
     def test_dumps_loads(self):
         for case in [{'a': 'b'}, {'a': 'próba'}, {'próba': '123'}]:
             r = self.Cookie.dumps(case)
-            self.assertIsInstance(r, bytes, case)
+            assert isinstance(r, bytes)
 
             r = self.Cookie.loads(r)
-            self.assertEqual(r, case)
+            assert r == case
 
     def test_encrypt_decrypt(self):
         key = b'my little key'
         for case in [b'{"a": "b"}', b'{"a": "pr\xc3\xb3ba"}']:
             r1 = self.Cookie.encrypt(case, key)
             r2 = self.Cookie.encrypt(case, key)
-            self.assertIsInstance(r1, bytes, case)
-            self.assertIsInstance(r2, bytes, case)
-            self.assertNotEqual(r1, r2, case)
+            assert isinstance(r1, bytes)
+            assert isinstance(r2, bytes)
+            assert r1 != r2
 
             r1_broken = self.Cookie.decrypt(r1, b'another key')
-            self.assertNotEqual(r1_broken, case)
+            assert r1_broken != case
 
             r1 = self.Cookie.decrypt(r1, key)
             r2 = self.Cookie.decrypt(r2, key)
-            self.assertEqual(r1, case)
-            self.assertEqual(r2, case)
+            assert r1 == case
+            assert r2 == case
 
     def test_serialize_unserialize(self):
         key = b'my little key'
         for case in [{'a': 'b'}, {'a': 'próba'}, {'próba': '123'}]:
             r = self.Cookie(case, key).serialize()
-            self.assertIsInstance(r, bytes, case)
+            assert isinstance(r, bytes)
             # Check it is ascii
             r.decode('ascii')
 
             r = self.Cookie.unserialize(r, key)
-            self.assertEqual(r, case)
-            self.assertEqual(dict(r), case)
+            assert r == case
     
     def test_unserialize_binary(self):
         """
@@ -71,32 +68,32 @@ class EncryptedCookieTest(unittest.TestCase):
         c = self.Cookie({'a': 'próba'}, key)
 
         r = self.Cookie.unserialize(c.serialize(time() - 1), key)
-        self.assertFalse(dict(r))
+        assert not r
 
         # Make sure previous expire not stored in cookie object.
         # (such bug present in original SecureCookie)
         r = self.Cookie.unserialize(c.serialize(), key)
-        self.assertTrue(dict(r))
+        assert r
 
         r = self.Cookie.unserialize(c.serialize(time() + 1), key)
-        self.assertTrue(dict(r))
+        assert r
 
     def test_fail_with_another_key(self):
         c = self.Cookie({'a': 'próba'}, 'one key')
         r = self.Cookie.unserialize(c.serialize(), b'another key')
-        self.assertFalse(dict(r))
+        assert not r
 
     def test_fail_when_not_json(self):
         key = b'my little key'
         r = self.RawCookie.encrypt(b'{"a", "pr\xc3\xb3ba"}', key)
         r = self.RawCookie.unserialize(r, key)
-        self.assertFalse(dict(r))
+        assert not r
 
     def test_fail_when_corrupted(self):
         key = b'my little key'
         r = self.RawCookie({"a": "próba"}, key).serialize()
         r = self.RawCookie.unserialize(r[:20] + r[21:], key)
-        self.assertFalse(dict(r))
+        assert not r
 
     def test_compression_and_decompression(self):
         key = b'my little key'
@@ -115,10 +112,10 @@ class EncryptedCookieTest(unittest.TestCase):
         )
         for cookie1, cookie2 in cases:
             result = cookie2.unserialize(cookie1.serialize(), key)
-            self.assertDictEqual(dict(result), case)
+            assert result == case
 
 
-class SecureEncryptedCookieTest(EncryptedCookieTest):
+class TestSecureEncryptedCookie(TestEncryptedCookie):
     Cookie = SecureEncryptedCookie
     class RawCookie(Cookie):
         quote_base64 = False
@@ -134,15 +131,15 @@ class SecureEncryptedCookieTest(EncryptedCookieTest):
         key, case = b'my little key', b'{"a": "pr\xc3\xb3ba"}'
         r = self.Cookie.encrypt(case, key)
         signed = EncryptedCookie.decrypt(r, key)
-        self.assertIn(case, signed)
+        assert case in signed
 
         r = EncryptedCookie.encrypt(signed, key)
         r = self.Cookie.decrypt(r, key)
-        self.assertEqual(r, case)
+        assert r == case
 
         r = EncryptedCookie.encrypt(signed[:-1] + b'!', key)
         r = self.Cookie.decrypt(r, key)
-        self.assertEqual(r, b'')
+        assert r == b''
     
     def test_unserialize_binary(self):
         """
@@ -155,7 +152,3 @@ class SecureEncryptedCookieTest(EncryptedCookieTest):
         ]:
             r = self.Cookie.unserialize(case, key)
             assert {'a': 'próba'} == dict(r)
-
-
-if __name__ == '__main__':
-    unittest.main()
