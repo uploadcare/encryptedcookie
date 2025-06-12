@@ -44,7 +44,7 @@ class TestEncryptedCookie:
     def test_serialize_unserialize(self):
         key = b'my little key'
         for case in [{'a': 'b'}, {'a': 'próba'}, {'próba': '123'}]:
-            r = self.Cookie(case, key).serialize()
+            r = self.Cookie(key).serialize(case)
             assert isinstance(r, bytes)
             # Check it is ascii
             r.decode('ascii')
@@ -66,22 +66,23 @@ class TestEncryptedCookie:
 
     def test_expires(self):
         key = b'my little key'
-        c = self.Cookie({'a': 'próba'}, key)
+        data = {'a': 'próba'}
+        c = self.Cookie(key)
 
-        r = self.Cookie.unserialize(c.serialize(time() - 1), key)
+        r = self.Cookie.unserialize(c.serialize(data, time() - 1), key)
         assert not r
 
         # Make sure previous expire not stored in cookie object.
         # (such bug present in original SecureCookie)
-        r = self.Cookie.unserialize(c.serialize(), key)
+        r = self.Cookie.unserialize(c.serialize(data), key)
         assert r
 
-        r = self.Cookie.unserialize(c.serialize(time() + 1), key)
+        r = self.Cookie.unserialize(c.serialize(data, time() + 1), key)
         assert r
 
     def test_fail_with_another_key(self):
-        c = self.Cookie({'a': 'próba'}, 'one key')
-        r = self.Cookie.unserialize(c.serialize(), b'another key')
+        c = self.Cookie(b'one key')
+        r = self.Cookie.unserialize(c.serialize({'a': 'próba'}), b'another key')
         assert not r
 
     def test_fail_when_not_json(self):
@@ -92,15 +93,15 @@ class TestEncryptedCookie:
 
     def test_fail_when_corrupted(self):
         key = b'my little key'
-        r = self.RawCookie({"a": "próba"}, key).serialize()
+        r = self.RawCookie(key).serialize({'a': 'próba'})
         r = self.RawCookie.unserialize(r[:20] + r[21:], key)
         assert not r
 
     def test_compression_and_decompression(self):
         key = b'my little key'
         case = {'a': 'próba'}
-        no_compress = self.NoCompressCookie(case, key)
-        compress = self.CompressCookie(case, key)
+        no_compress = self.NoCompressCookie(key)
+        compress = self.CompressCookie(key)
         cases = (
             # No-compressed instance unserialized by no-compressed instance
             (no_compress, no_compress),
@@ -112,7 +113,7 @@ class TestEncryptedCookie:
             (compress, compress),
         )
         for cookie1, cookie2 in cases:
-            result = cookie2.unserialize(cookie1.serialize(), key)
+            result = cookie2.unserialize(cookie1.serialize(case), key)
             assert result == case
 
 

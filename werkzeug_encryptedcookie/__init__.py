@@ -10,14 +10,16 @@ from time import time
 
 import brotli
 from Crypto.Cipher import ARC4
-from secure_cookie.cookie import SecureCookie, _date_to_unix
+from secure_cookie.cookie import _date_to_unix
 
 
-class EncryptedCookie(SecureCookie):
+class EncryptedCookie:
+    quote_base64 = True
     compress_cookie = True
     compress_cookie_header = b'~!~brtl~!~'
-    # to avoid deprecation warnings
-    serialization_method = json
+
+    def __init__(self, secret_key: bytes):
+        self.secret_key = secret_key
 
     @classmethod
     def _get_cipher(cls, key: bytes) -> ARC4.ARC4Cipher:
@@ -37,11 +39,11 @@ class EncryptedCookie(SecureCookie):
     def compress(cls, data: bytes) -> bytes:
         return cls.compress_cookie_header + brotli.compress(data, quality=8)
 
-    def serialize(self, expires=None) -> bytes:
+    def serialize(self, data: dict, expires=None) -> bytes:
         if self.secret_key is None:
             raise RuntimeError('no secret key defined')
 
-        data = dict(self)
+        data = data.copy()
         if expires:
             data['_expires'] = _date_to_unix(expires)
 
@@ -80,7 +82,7 @@ class EncryptedCookie(SecureCookie):
         return data
 
     @classmethod
-    def unserialize(cls, string: bytes, secret_key: bytes) -> EncryptedCookie:
+    def unserialize(cls, string: bytes, secret_key: bytes) -> dict:
         if cls.quote_base64:
             try:
                 string = base64.b64decode(string)
@@ -93,15 +95,15 @@ class EncryptedCookie(SecureCookie):
         try:
             data = cls.loads(payload)
         except ValueError:
-            data = None
+            data = {}
 
         if data and '_expires' in data:
             if time() > data['_expires']:
-                data = None
+                data = {}
             else:
                 del data['_expires']
 
-        return cls(data, secret_key, False)
+        return data
 
 
 class SecureEncryptedCookie(EncryptedCookie):
