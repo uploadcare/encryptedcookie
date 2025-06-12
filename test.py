@@ -53,6 +53,18 @@ class EncryptedCookieTest(unittest.TestCase):
             r = self.Cookie.unserialize(r, key)
             self.assertEqual(r, case)
             self.assertEqual(dict(r), case)
+    
+    def test_unserialize_binary(self):
+        """
+        Test unserialize compatibility with existing binary data.
+        """
+        key = b'my little key'
+        for case in [
+                b'GXCS2JfvmfQJwuxYUITWTmnanyjkIP0IHKbZF2u7oz2qnuIRGuzJbF5JhZrp',
+                b'bvK0dvBIBuPqIrG+o4Zmmu6ln7bLoR+xTz906R8GQAAAaM2rlncYNzsKIsmU',
+        ]:
+            r = self.Cookie.unserialize(case, key)
+            assert {'a': 'próba'} == dict(r)
 
     def test_expires(self):
         key = b'my little key'
@@ -131,6 +143,18 @@ class SecureEncryptedCookieTest(EncryptedCookieTest):
         r = EncryptedCookie.encrypt(signed[:-1] + b'!', key)
         r = self.Cookie.decrypt(r, key)
         self.assertEqual(r, b'')
+    
+    def test_unserialize_binary(self):
+        """
+        Test unserialize compatibility with existing binary data.
+        """
+        key = b'my little key'
+        for case in [
+                b'vGSOoyvh3KREQNzFhAbhl/oSugKPMJ8QDvp4VWRtSpgUA3670wlkbv1kzA15HQ9oBw==',
+                b'78EM1wnaIkz6FP0EDxHPk6xeGFam2w6cSr6FWosRf6X3H7ILJvhA+gkuq+6AT9iD6g=='
+        ]:
+            r = self.Cookie.unserialize(case, key)
+            assert {'a': 'próba'} == dict(r)
 
 
 if __name__ == '__main__':
