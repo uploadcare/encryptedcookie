@@ -21,18 +21,16 @@ class EncryptedCookie:
     def __init__(self, secret_key: bytes):
         self.secret_key = secret_key
 
-    @classmethod
-    def _get_cipher(cls, key: bytes) -> ARC4.ARC4Cipher:
-        return ARC4.new(sha1(key).digest())
+    def _get_cipher(self, nonce: bytes) -> ARC4.ARC4Cipher:
+        return ARC4.new(sha1(self.secret_key + nonce).digest())
 
     @classmethod
     def dumps(cls, data: dict) -> bytes:
         return json.dumps(data, ensure_ascii=False).encode()
 
-    @classmethod
-    def encrypt(cls, data: bytes, secret_key: bytes) -> bytes:
+    def encrypt(self, data: bytes) -> bytes:
         nonce = secrets.token_bytes(16)
-        cipher = cls._get_cipher(secret_key + nonce)
+        cipher = self._get_cipher(nonce)
         return nonce + cipher.encrypt(data)
 
     @classmethod
@@ -40,9 +38,6 @@ class EncryptedCookie:
         return cls.compress_cookie_header + brotli.compress(data, quality=8)
 
     def serialize(self, data: dict, expires=None) -> bytes:
-        if self.secret_key is None:
-            raise RuntimeError('no secret key defined')
-
         data = data.copy()
         if expires:
             data['_expires'] = _date_to_unix(expires)
@@ -52,7 +47,7 @@ class EncryptedCookie:
         if self.compress_cookie:
             payload = self.compress(payload)
 
-        string = self.encrypt(payload, self.secret_key)
+        string = self.encrypt(payload)
 
         if self.quote_base64:
             string = base64.b64encode(string)
@@ -63,11 +58,10 @@ class EncryptedCookie:
     def loads(cls, data: bytes) -> dict:
         return json.loads(data.decode('utf-8'))
 
-    @classmethod
-    def decrypt(cls, string: bytes, secret_key: bytes) -> bytes:
+    def decrypt(self, string: bytes) -> bytes:
         nonce, payload = string[:16], string[16:]
 
-        cipher = cls._get_cipher(secret_key + nonce)
+        cipher = self._get_cipher(nonce)
         return cipher.decrypt(payload)
 
     @classmethod
@@ -81,19 +75,18 @@ class EncryptedCookie:
 
         return data
 
-    @classmethod
-    def unserialize(cls, string: bytes, secret_key: bytes) -> dict:
-        if cls.quote_base64:
+    def unserialize(self, string: bytes) -> dict:
+        if self.quote_base64:
             try:
                 string = base64.b64decode(string)
             except Exception:
                 pass
 
-        payload = cls.decrypt(string, secret_key)
-        payload = cls.decompress(payload)
+        payload = self.decrypt(string)
+        payload = self.decompress(payload)
 
         try:
-            data = cls.loads(payload)
+            data = self.loads(payload)
         except ValueError:
             data = {}
 
@@ -107,17 +100,15 @@ class EncryptedCookie:
 
 
 class SecureEncryptedCookie(EncryptedCookie):
-    @classmethod
-    def encrypt(cls, data: bytes, secret_key: bytes) -> bytes:
-        crc = zlib.crc32(data, zlib.crc32(secret_key))
+    def encrypt(self, data: bytes) -> bytes:
+        crc = zlib.crc32(data, zlib.crc32(self.secret_key))
         data += struct.pack('>I', crc & 0xffffffff)
-        return super().encrypt(data, secret_key)
+        return super().encrypt(data)
 
-    @classmethod
-    def decrypt(cls, string: bytes, secret_key: bytes) -> bytes:
-        data = super().decrypt(string, secret_key)
+    def decrypt(self, string: bytes) -> bytes:
+        data = super().decrypt(string)
         data, crc1 = data[:-4], data[-4:]
-        crc2 = zlib.crc32(data, zlib.crc32(secret_key))
+        crc2 = zlib.crc32(data, zlib.crc32(self.secret_key))
         if crc1 != struct.pack('>I', crc2 & 0xffffffff):
             return b''
         return data
