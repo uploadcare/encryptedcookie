@@ -1,3 +1,4 @@
+from datetime import timedelta
 from time import time
 
 from werkzeug_encryptedcookie import EncryptedCookie, SecureEncryptedCookie
@@ -75,10 +76,16 @@ class TestEncryptedCookie:
         # Make sure previous expire not stored in cookie object.
         # (such bug present in original SecureCookie)
         r = cookie.unserialize(c.serialize(data))
-        assert r
+        assert r == data
 
         r = cookie.unserialize(c.serialize(data, time() + 1))
-        assert r
+        assert r == data
+
+        r = cookie.unserialize(c.serialize(data, timedelta(-1)))
+        assert not r
+
+        r = cookie.unserialize(c.serialize(data, timedelta(1)))
+        assert r == data
 
     def test_fail_with_another_key(self):
         r = self.Cookie(b'one key').serialize({'a': 'próba'})

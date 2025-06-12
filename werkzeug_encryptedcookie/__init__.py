@@ -5,12 +5,21 @@ import json
 import secrets
 import struct
 import zlib
+from datetime import timedelta
 from hashlib import sha1
 from time import time
 
 import brotli
 from Crypto.Cipher import ARC4
-from secure_cookie.cookie import _date_to_unix
+
+
+def _date_to_unix(arg: float | int | timedelta):
+    """
+    Converts int or timedelta object into the seconds from epoch in UTC.
+    """
+    if isinstance(arg, timedelta):
+        arg = time() + arg.total_seconds()
+    return int(arg)
 
 
 class EncryptedCookie:
@@ -37,9 +46,11 @@ class EncryptedCookie:
     def compress(cls, data: bytes) -> bytes:
         return cls.compress_cookie_header + brotli.compress(data, quality=8)
 
-    def serialize(self, data: dict, expires=None) -> bytes:
+    def serialize(
+            self, data: dict, expires: float | int | timedelta | None = None
+    ) -> bytes:
         data = data.copy()
-        if expires:
+        if expires is not None:
             data['_expires'] = _date_to_unix(expires)
 
         payload = self.dumps(data)
