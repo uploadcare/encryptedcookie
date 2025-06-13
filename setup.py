@@ -4,13 +4,13 @@ from setuptools import setup
 
 
 setup(
-    name='werkzeug-encryptedcookie',
-    version='4.0',
-    url='https://github.com/homm/werkzeug-encryptedcookie',
-    author='Alexander Karpinsky',
-    author_email='homm86@gmail.com',
-    description='Werkzeug encrypted cookie',
-    packages=['werkzeug_encryptedcookie'],
+    name='encryptedcookie',
+    version='1.0',
+    url='https://github.com/uploadcare/encryptedcookie',
+    author='Uploadcare',
+    author_email='ak@uploadcare.com',
+    description='encrypted cookie',
+    packages=['encryptedcookie'],
     platforms='any',
     install_requires=['pycryptodome>=3.11.0', 'brotli>=1.0.1'],
     classifiers=[

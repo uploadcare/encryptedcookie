@@ -1,7 +1,7 @@
 from datetime import timedelta
 from time import time
 
-from werkzeug_encryptedcookie import EncryptedCookie, SecureEncryptedCookie
+from encryptedcookie import EncryptedCookie, SecureEncryptedCookie
 
 
 class TestEncryptedCookie:
