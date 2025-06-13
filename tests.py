@@ -119,14 +119,15 @@ class TestEncryptedCookie:
 class TestSecureEncryptedCookie(TestEncryptedCookie):
     Cookie = SecureEncryptedCookie
 
-    class RawCookie(Cookie):
+    class RawCookie(Cookie):  # pyright: ignore[reportIncompatibleVariableOverride]
         quote_base64 = False
 
-    class NoCompressCookie(Cookie):
+    class NoCompressCookie(  # pyright: ignore[reportIncompatibleVariableOverride]
+            Cookie):
         compress_cookie = False
 
     # Explicit setup for tests
-    class CompressCookie(Cookie):
+    class CompressCookie(Cookie):  # pyright: ignore[reportIncompatibleVariableOverride]
         compress_cookie = True
 
     def test_unsigned(self):

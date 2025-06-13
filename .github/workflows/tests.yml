@@ -1,8 +1,12 @@
 name: CI
 
 on:
-  push:
   pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
 
 jobs:
   test:
@@ -23,7 +27,7 @@ jobs:
         run: pip install .[test]
 
       - name: Run pytest
-        run: pytest
+        run: make test
 
   lint:
     name: Run lint
@@ -37,7 +41,7 @@ jobs:
           python-version: 3.12
 
       - name: Install dependencies for lint
-        run: pip install .[test]
+        run: pip install .[lint]
 
       - name: Run make lint
         run: make lint
