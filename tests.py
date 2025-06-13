@@ -5,6 +5,7 @@ from werkzeug_encryptedcookie import EncryptedCookie, SecureEncryptedCookie
 
 class TestEncryptedCookie:
     Cookie = EncryptedCookie
+
     class RawCookie(Cookie):
         quote_base64 = False
 
@@ -50,7 +51,7 @@ class TestEncryptedCookie:
 
             r = self.Cookie.unserialize(r, key)
             assert r == case
-    
+
     def test_unserialize_binary(self):
         """
         Test unserialize compatibility with existing binary data.
@@ -117,6 +118,7 @@ class TestEncryptedCookie:
 
 class TestSecureEncryptedCookie(TestEncryptedCookie):
     Cookie = SecureEncryptedCookie
+
     class RawCookie(Cookie):
         quote_base64 = False
 
@@ -140,7 +142,7 @@ class TestSecureEncryptedCookie(TestEncryptedCookie):
         r = EncryptedCookie.encrypt(signed[:-1] + b'!', key)
         r = self.Cookie.decrypt(r, key)
         assert r == b''
-    
+
     def test_unserialize_binary(self):
         """
         Test unserialize compatibility with existing binary data.

@@ -2,7 +2,6 @@
 
 from setuptools import setup
 
-tests_require = ['pytest']
 
 setup(
     name='werkzeug-encryptedcookie',
@@ -13,7 +12,7 @@ setup(
     description='Werkzeug encrypted cookie',
     packages=['werkzeug_encryptedcookie'],
     platforms='any',
-    install_requires=['pycryptodome', 'secure-cookie', 'brotli'],
+    install_requires=['pycryptodome>=3.11.0', 'secure-cookie', 'brotli>=1.0.1'],
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
@@ -21,6 +20,8 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    tests_require=tests_require,
+    extras_require={
+        'test': ['pytest', 'isort', 'flake8'],
+    },
     test_suite='test',
 )
