@@ -5,44 +5,52 @@ import json
 import secrets
 import struct
 import zlib
+from datetime import timedelta
 from hashlib import sha1
 from time import time
 
 import brotli
 from Crypto.Cipher import ARC4
-from secure_cookie.cookie import SecureCookie, _date_to_unix
 
 
-class EncryptedCookie(SecureCookie):
+def _date_to_unix(arg: float | int | timedelta):
+    """
+    Converts int or timedelta object into the seconds from epoch in UTC.
+    """
+    if isinstance(arg, timedelta):
+        arg = time() + arg.total_seconds()
+    return int(arg)
+
+
+class EncryptedCookie:
+    quote_base64 = True
     compress_cookie = True
     compress_cookie_header = b'~!~brtl~!~'
-    # to avoid deprecation warnings
-    serialization_method = json
 
-    @classmethod
-    def _get_cipher(cls, key: bytes) -> ARC4.ARC4Cipher:
-        return ARC4.new(sha1(key).digest())
+    def __init__(self, secret_key: bytes):
+        self.secret_key = secret_key
+
+    def _get_cipher(self, nonce: bytes) -> ARC4.ARC4Cipher:
+        return ARC4.new(sha1(self.secret_key + nonce).digest())
 
     @classmethod
     def dumps(cls, data: dict) -> bytes:
         return json.dumps(data, ensure_ascii=False).encode()
 
-    @classmethod
-    def encrypt(cls, data: bytes, secret_key: bytes) -> bytes:
+    def encrypt(self, data: bytes) -> bytes:
         nonce = secrets.token_bytes(16)
-        cipher = cls._get_cipher(secret_key + nonce)
+        cipher = self._get_cipher(nonce)
         return nonce + cipher.encrypt(data)
 
     @classmethod
     def compress(cls, data: bytes) -> bytes:
         return cls.compress_cookie_header + brotli.compress(data, quality=8)
 
-    def serialize(self, expires=None) -> bytes:
-        if self.secret_key is None:
-            raise RuntimeError('no secret key defined')
-
-        data = dict(self)
-        if expires:
+    def serialize(
+            self, data: dict, expires: float | int | timedelta | None = None
+    ) -> bytes:
+        data = data.copy()
+        if expires is not None:
             data['_expires'] = _date_to_unix(expires)
 
         payload = self.dumps(data)
@@ -50,7 +58,7 @@ class EncryptedCookie(SecureCookie):
         if self.compress_cookie:
             payload = self.compress(payload)
 
-        string = self.encrypt(payload, self.secret_key)
+        string = self.encrypt(payload)
 
         if self.quote_base64:
             string = base64.b64encode(string)
@@ -61,11 +69,10 @@ class EncryptedCookie(SecureCookie):
     def loads(cls, data: bytes) -> dict:
         return json.loads(data.decode('utf-8'))
 
-    @classmethod
-    def decrypt(cls, string: bytes, secret_key: bytes) -> bytes:
+    def decrypt(self, string: bytes) -> bytes:
         nonce, payload = string[:16], string[16:]
 
-        cipher = cls._get_cipher(secret_key + nonce)
+        cipher = self._get_cipher(nonce)
         return cipher.decrypt(payload)
 
     @classmethod
@@ -79,43 +86,40 @@ class EncryptedCookie(SecureCookie):
 
         return data
 
-    @classmethod
-    def unserialize(cls, string: bytes, secret_key: bytes) -> EncryptedCookie:
-        if cls.quote_base64:
+    def unserialize(self, string: bytes) -> dict:
+        if self.quote_base64:
             try:
                 string = base64.b64decode(string)
             except Exception:
                 pass
 
-        payload = cls.decrypt(string, secret_key)
-        payload = cls.decompress(payload)
+        payload = self.decrypt(string)
+        payload = self.decompress(payload)
 
         try:
-            data = cls.loads(payload)
+            data = self.loads(payload)
         except ValueError:
-            data = None
+            data = {}
 
         if data and '_expires' in data:
             if time() > data['_expires']:
-                data = None
+                data = {}
             else:
                 del data['_expires']
 
-        return cls(data, secret_key, False)
+        return data
 
 
 class SecureEncryptedCookie(EncryptedCookie):
-    @classmethod
-    def encrypt(cls, data: bytes, secret_key: bytes) -> bytes:
-        crc = zlib.crc32(data, zlib.crc32(secret_key))
+    def encrypt(self, data: bytes) -> bytes:
+        crc = zlib.crc32(data, zlib.crc32(self.secret_key))
         data += struct.pack('>I', crc & 0xffffffff)
-        return super().encrypt(data, secret_key)
+        return super().encrypt(data)
 
-    @classmethod
-    def decrypt(cls, string: bytes, secret_key: bytes) -> bytes:
-        data = super().decrypt(string, secret_key)
+    def decrypt(self, string: bytes) -> bytes:
+        data = super().decrypt(string)
         data, crc1 = data[:-4], data[-4:]
-        crc2 = zlib.crc32(data, zlib.crc32(secret_key))
+        crc2 = zlib.crc32(data, zlib.crc32(self.secret_key))
         if crc1 != struct.pack('>I', crc2 & 0xffffffff):
             return b''
         return data
