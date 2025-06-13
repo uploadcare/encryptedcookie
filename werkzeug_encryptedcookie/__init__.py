@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import base64
 import json
+import secrets
 import struct
 import zlib
+from hashlib import sha1
 from time import time
 
 import brotli
-from Crypto import Random
 from Crypto.Cipher import ARC4
-from Crypto.Hash import SHA
-from secure_cookie.cookie import _date_to_unix, SecureCookie
+from secure_cookie.cookie import SecureCookie, _date_to_unix
 
 
 class EncryptedCookie(SecureCookie):
@@ -21,7 +21,7 @@ class EncryptedCookie(SecureCookie):
 
     @classmethod
     def _get_cipher(cls, key: bytes) -> ARC4.ARC4Cipher:
-        return ARC4.new(SHA.new(key).digest())
+        return ARC4.new(sha1(key).digest())
 
     @classmethod
     def dumps(cls, data: dict) -> bytes:
@@ -29,7 +29,7 @@ class EncryptedCookie(SecureCookie):
 
     @classmethod
     def encrypt(cls, data: bytes, secret_key: bytes) -> bytes:
-        nonce = Random.new().read(16)
+        nonce = secrets.token_bytes(16)
         cipher = cls._get_cipher(secret_key + nonce)
         return nonce + cipher.encrypt(data)
 
