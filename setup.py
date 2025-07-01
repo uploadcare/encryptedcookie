@@ -25,7 +25,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
     extras_require={
-        'test': ['pytest'],
+        'test': ['pytest>=8.3.2', 'pytest-cov>=5.0.0'],
         'lint': ['isort', 'flake8', 'pyright'],
     },
     test_suite='test',

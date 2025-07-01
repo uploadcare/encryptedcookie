@@ -37,14 +37,14 @@ class EncryptedCookie:
     def dumps(cls, data: dict) -> bytes:
         return json.dumps(data, ensure_ascii=False).encode()
 
+    @classmethod
+    def compress(cls, data: bytes) -> bytes:
+        return cls.compress_cookie_header + brotli.compress(data, quality=8)
+
     def encrypt(self, data: bytes) -> bytes:
         nonce = secrets.token_bytes(16)
         cipher = self._get_cipher(nonce)
         return nonce + cipher.encrypt(data)
-
-    @classmethod
-    def compress(cls, data: bytes) -> bytes:
-        return cls.compress_cookie_header + brotli.compress(data, quality=8)
 
     def serialize(
             self, data: dict, expires: float | int | timedelta | None = None
@@ -67,13 +67,7 @@ class EncryptedCookie:
 
     @classmethod
     def loads(cls, data: bytes) -> dict:
-        return json.loads(data.decode('utf-8'))
-
-    def decrypt(self, string: bytes) -> bytes:
-        nonce, payload = string[:16], string[16:]
-
-        cipher = self._get_cipher(nonce)
-        return cipher.decrypt(payload)
+        return json.loads(data.decode())
 
     @classmethod
     def decompress(cls, data: bytes) -> bytes:
@@ -85,6 +79,12 @@ class EncryptedCookie:
                 pass
 
         return data
+
+    def decrypt(self, string: bytes) -> bytes:
+        nonce, payload = string[:16], string[16:]
+
+        cipher = self._get_cipher(nonce)
+        return cipher.decrypt(payload)
 
     def unserialize(self, string: bytes) -> dict:
         if self.quote_base64:

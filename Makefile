@@ -4,4 +4,4 @@ lint:
 	pyright .
 
 test:
-	pytest -v
+	pytest -v --cov=encryptedcookie --cov-report=html
