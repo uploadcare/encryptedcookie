@@ -65,6 +65,15 @@ class EncryptedCookie:
 
         return string
 
+    def serialize_str(
+            self, data: dict, expires: float | int | timedelta | None = None
+    ) -> str:
+        string = self.serialize(data, expires)
+        if self.quote_base64:
+            return string.decode('ascii')
+        else:
+            return string.hex()
+
     @classmethod
     def loads(cls, data: bytes) -> dict:
         return json.loads(data.decode())
@@ -90,7 +99,7 @@ class EncryptedCookie:
         if self.quote_base64:
             try:
                 string = base64.b64decode(string)
-            except Exception:
+            except ValueError:
                 pass
 
         payload = self.decrypt(string)
@@ -108,6 +117,16 @@ class EncryptedCookie:
                 del data['_expires']
 
         return data
+
+    def unserialize_str(self, string: str) -> dict:
+        if self.quote_base64:
+            data = string.encode()
+        else:
+            try:
+                data = bytes.fromhex(string)
+            except ValueError:
+                data = string.encode()
+        return self.unserialize(data)
 
 
 class SecureEncryptedCookie(EncryptedCookie):
