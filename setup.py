@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='encryptedcookie',
-    version='1.0',
+    version='1.1',
     url='https://github.com/uploadcare/encryptedcookie',
     author='Uploadcare',
     author_email='ak@uploadcare.com',
