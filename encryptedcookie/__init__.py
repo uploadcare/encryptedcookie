@@ -37,14 +37,14 @@ class EncryptedCookie:
     def dumps(cls, data: dict) -> bytes:
         return json.dumps(data, ensure_ascii=False).encode()
 
+    @classmethod
+    def compress(cls, data: bytes) -> bytes:
+        return cls.compress_cookie_header + brotli.compress(data, quality=8)
+
     def encrypt(self, data: bytes) -> bytes:
         nonce = secrets.token_bytes(16)
         cipher = self._get_cipher(nonce)
         return nonce + cipher.encrypt(data)
-
-    @classmethod
-    def compress(cls, data: bytes) -> bytes:
-        return cls.compress_cookie_header + brotli.compress(data, quality=8)
 
     def serialize(
             self, data: dict, expires: float | int | timedelta | None = None
@@ -65,15 +65,18 @@ class EncryptedCookie:
 
         return string
 
+    def serialize_str(
+            self, data: dict, expires: float | int | timedelta | None = None
+    ) -> str:
+        string = self.serialize(data, expires)
+        if self.quote_base64:
+            return string.decode('ascii')
+        else:
+            return string.hex()
+
     @classmethod
     def loads(cls, data: bytes) -> dict:
-        return json.loads(data.decode('utf-8'))
-
-    def decrypt(self, string: bytes) -> bytes:
-        nonce, payload = string[:16], string[16:]
-
-        cipher = self._get_cipher(nonce)
-        return cipher.decrypt(payload)
+        return json.loads(data.decode())
 
     @classmethod
     def decompress(cls, data: bytes) -> bytes:
@@ -86,11 +89,17 @@ class EncryptedCookie:
 
         return data
 
+    def decrypt(self, string: bytes) -> bytes:
+        nonce, payload = string[:16], string[16:]
+
+        cipher = self._get_cipher(nonce)
+        return cipher.decrypt(payload)
+
     def unserialize(self, string: bytes) -> dict:
         if self.quote_base64:
             try:
                 string = base64.b64decode(string)
-            except Exception:
+            except ValueError:
                 pass
 
         payload = self.decrypt(string)
@@ -108,6 +117,16 @@ class EncryptedCookie:
                 del data['_expires']
 
         return data
+
+    def unserialize_str(self, string: str) -> dict:
+        if self.quote_base64:
+            data = string.encode()
+        else:
+            try:
+                data = bytes.fromhex(string)
+            except ValueError:
+                data = string.encode()
+        return self.unserialize(data)
 
 
 class SecureEncryptedCookie(EncryptedCookie):

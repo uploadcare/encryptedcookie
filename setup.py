@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='encryptedcookie',
-    version='1.0',
+    version='1.1',
     url='https://github.com/uploadcare/encryptedcookie',
     author='Uploadcare',
     author_email='ak@uploadcare.com',
@@ -25,7 +25,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
     extras_require={
-        'test': ['pytest'],
+        'test': ['pytest>=8.3.2', 'pytest-cov>=5.0.0'],
         'lint': ['isort', 'flake8', 'pyright'],
     },
     test_suite='test',

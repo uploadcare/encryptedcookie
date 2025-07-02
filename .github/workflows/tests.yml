@@ -29,6 +29,12 @@ jobs:
       - name: Run pytest
         run: make test
 
+      - name: Add coverage summary to GitHub UI
+        run: |
+          echo -e "### Coverage Summary\n\`\`\`" >> $GITHUB_STEP_SUMMARY
+          coverage report >> $GITHUB_STEP_SUMMARY
+          echo -e "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
   lint:
     name: Run lint
     runs-on: ubuntu-latest

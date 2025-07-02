@@ -53,6 +53,16 @@ class TestEncryptedCookie:
             r = cookie.unserialize(r)
             assert r == case
 
+    def test_serialize_str_unserialize_str(self):
+        for Cookie in [self.Cookie, self.RawCookie]:
+            cookie = Cookie(b'my little key')
+            for case in [{'a': 'b'}, {'a': 'próba'}, {'próba': '123'}]:
+                r = cookie.serialize_str(case)
+                assert isinstance(r, str)
+
+                r = cookie.unserialize_str(r)
+                assert r == case
+
     def test_unserialize_binary(self):
         """
         Test unserialize compatibility with existing binary data.
@@ -103,6 +113,31 @@ class TestEncryptedCookie:
         r = cookie.serialize({'a': 'próba'})
         r = cookie.unserialize(r[:20] + r[21:])
         assert not r
+
+    def test_fail_incorrect_str(self):
+        cookie = self.Cookie(b'my little key')
+        raw = self.RawCookie(b'my little key').serialize({'a': 'próba'})
+
+        # Send somthing which can't be base64 decoded
+        r = cookie.unserialize_str(raw.hex())
+        assert r == {}
+
+        # Send somthing not ascii at all
+        r = cookie.unserialize_str(raw.decode('latin-1'))
+        assert r == {}
+
+    def test_fail_incorrect_raw_str(self):
+        b64 = self.Cookie(b'my little key').serialize({'a': 'próba'})
+        raw_cookie = self.RawCookie(b'my little key')
+
+        # Send somthing which can't be hex decoded
+        r = raw_cookie.unserialize_str(b64.decode())
+        assert r == {}
+
+        # Send somthing not ascii at all
+        raw = raw_cookie.serialize({'a': 'próba'})
+        r = raw_cookie.unserialize_str(raw.decode('latin-1'))
+        assert r == {}
 
     def test_compression_and_decompression(self):
         key = b'my little key'
